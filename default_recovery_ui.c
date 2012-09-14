@@ -22,13 +22,13 @@
 
 char* MENU_HEADERS[] = { NULL };
 
-char* MENU_ITEMS[] = { "reboot menu",
-                       "install menu",
-                       "wipe menu",
-                       "nandroid menu",
-                       "storage menu",
-                       "tweaks menu",
-                       "power off",
+char* MENU_ITEMS[] = { "reboot system now",
+                       "install zip from sdcard",
+                       "wipe data/factory reset",
+                       "wipe cache partition",
+                       "backup and restore",
+                       "mounts and storage",
+                       "advanced",
                        NULL };
 
 void device_ui_init(UIParameters* ui_parameters) {
