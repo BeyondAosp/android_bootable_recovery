@@ -83,6 +83,7 @@ int device_wipe_data();
 #define ITEM_NANDROID        4
 #define ITEM_PARTITION       5
 #define ITEM_ADVANCED        6
+#define ITEM_POWEROFF        7
 
 // Header text to display above the main menu.
 extern char* MENU_HEADERS[];
@@ -100,8 +101,5 @@ void
 set_sdcard_update_bootloader_message();
 
 extern int ui_handle_key(int key, int visible);
-
-// call a clean reboot
-void reboot_main_system(int cmd, int flags, char *arg);
 
 #endif
