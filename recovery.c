@@ -755,7 +755,7 @@ prompt_and_wait() {
         int status;
         switch (chosen_item) {
             case ITEM_REBOOT:
-                poweroff=0;
+                poweroff = 0;
                 return;
 
             case ITEM_WIPE_DATA:
@@ -788,10 +788,6 @@ prompt_and_wait() {
             case ITEM_ADVANCED:
                 show_advanced_menu();
                 break;
-
-            case ITEM_POWEROFF:
-                poweroff = 1;
-                return;
         }
     }
 }
@@ -832,6 +828,13 @@ setup_adbd() {
 
     // Trigger (re)start of adb daemon
     property_set("service.adb.root", "1");
+}
+
+// call a clean reboot
+void reboot_main_system(int cmd, int flags, char *arg) {
+    verify_root_and_recovery();
+    finish_recovery(NULL); // sync() in here
+    android_reboot(cmd, flags, arg);
 }
 
 int
