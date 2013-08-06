@@ -1253,8 +1253,14 @@ static void partition_sdcard(const char* volume) {
                                   "256M",
                                   NULL };
 
+    static char* partition_types[] = { "ext3",
+                                       "ext4",
+                                       NULL
+    };
+
     static char* ext_headers[] = { "Ext Size", "", NULL };
     static char* swap_headers[] = { "Swap Size", "", NULL };
+    static char* fstype_headers[] = {"Partition Type", "", NULL };
 
     int ext_size = get_menu_selection(ext_headers, ext_sizes, 0, 0);
     if (ext_size == GO_BACK)
@@ -1264,6 +1270,10 @@ static void partition_sdcard(const char* volume) {
     if (swap_size == GO_BACK)
         return;
 
+    int partition_type = get_menu_selection(fstype_headers, partition_types, 0, 0);
+    if (partition_type == GO_BACK)
+        return;
+
     char sddevice[256];
     Volume *vol = volume_for_path(volume);
     strcpy(sddevice, vol->device);
@@ -1271,7 +1281,7 @@ static void partition_sdcard(const char* volume) {
     sddevice[strlen("/dev/block/mmcblkX")] = NULL;
     char cmd[PATH_MAX];
     setenv("SDPATH", sddevice, 1);
-    sprintf(cmd, "sdparted -es %s -ss %s -efs ext3 -s", ext_sizes[ext_size], swap_sizes[swap_size]);
+    sprintf(cmd, "sdparted -es %s -ss %s -efs %s -s", ext_sizes[ext_size], swap_sizes[swap_size], partition_types[partition_type]);
     ui_print("Partitioning SD Card... please wait...\n");
     if (0 == __system(cmd))
         ui_print("Done!\n");
@@ -1579,15 +1589,22 @@ int verify_root_and_recovery() {
 
     int ret = 0;
     struct stat st;
-    if (0 == lstat("/system/etc/install-recovery.sh", &st)) {
-        if (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
-            ui_show_text(1);
-            ret = 1;
-            if (confirm_selection("ROM may flash stock recovery on boot. Fix?", "Yes - Disable recovery flash")) {
-                __system("chmod -x /system/etc/install-recovery.sh");
+    // check to see if install-recovery.sh is going to clobber recovery
+    // install-recovery.sh is also used to run the su daemon on stock rom for 4.3+
+    // so verify that doesn't exist...
+    if (0 != lstat("/system/etc/.installed_su_daemon", &st)) {
+        // check install-recovery.sh exists and is executable
+        if (0 == lstat("/system/etc/install-recovery.sh", &st)) {
+            if (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+                ui_show_text(1);
+                ret = 1;
+                if (confirm_selection("ROM may flash stock recovery on boot. Fix?", "Yes - Disable recovery flash")) {
+                    __system("chmod -x /system/etc/install-recovery.sh");
+                }
             }
         }
     }
+
 
     int exists = 0;
     if (0 == lstat("/system/bin/su", &st)) {
@@ -1620,9 +1637,7 @@ int verify_root_and_recovery() {
         ui_show_text(1);
         ret = 1;
         if (confirm_selection("Root access is missing. Root device?", "Yes - Root device (/system/xbin/su)")) {
-            __system("cp /sbin/su.recovery /system/xbin/su");
-            __system("chmod 6755 /system/xbin/su");
-            __system("ln -sf /system/xbin/su /system/bin/su");
+            __system("/sbin/install-su.sh");
         }
     }
 
